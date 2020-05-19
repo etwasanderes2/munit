@@ -2,6 +2,7 @@
 Add the capability to add custom error messages to assertions.
 As of this writing, that hasn't happened.
 I'm not exactly experienced with c, so this project may very well be abandoned.
+Actual code is / will be on branch `development`, `info` is just to explain the goal of this fork.
 
 # µnit
 
