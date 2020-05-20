@@ -227,6 +227,17 @@ munit_logf_ex(MunitLogLevel level, const char* filename, int line, const char* f
   }
 }
 
+/////////////////////////
+void
+munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, const char* format, ...) {
+  va_list ap;
+
+  va_start(ap, format);
+  munit_logf_exv(level, stderr, filename, line, format, ap);
+  va_end(ap);
+}
+/////////////////////////////
+
 void
 munit_errorf_ex(const char* filename, int line, const char* format, ...) {
   va_list ap;

@@ -185,6 +185,18 @@ typedef enum {
 MUNIT_PRINTF(4, 5)
 void munit_logf_ex(MunitLogLevel level, const char* filename, int line, const char* format, ...);
 
+//////////////////////
+void munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, const char* format, ...);
+
+#define munit_logf_noabort(level, format, ...) \
+  munit_logf_ex_noabort(level, __FILE__, __LINE__, format, __VA_ARGS__)
+
+#define munit_log_noabort(level, msg) \
+  munit_logf_noabort(level, "%s", msg)
+
+
+///////////////////////
+
 #define munit_logf(level, format, ...) \
   munit_logf_ex(level, __FILE__, __LINE__, format, __VA_ARGS__)
 
@@ -209,6 +221,18 @@ void munit_errorf_ex(const char* filename, int line, const char* format, ...);
     MUNIT_PUSH_DISABLE_MSVC_C4127_ \
   } while (0) \
   MUNIT_POP_DISABLE_MSVC_C4127_
+
+/////////////////////////////////////
+#define munit_assert_msgf(expr, msg, ...) \
+  do { \
+    if (!MUNIT_LIKELY(expr)) { \
+      munit_log_noabort(MUNIT_LOG_ERROR, "assertion failed: " #expr); \
+      munit_errorf(msg, __VA_ARGS__); \
+    } \
+    MUNIT_PUSH_DISABLE_MSVC_C4127_ \
+  } while (0) \
+  MUNIT_POP_DISABLE_MSVC_C4127_
+/////////////////////////////////////
 
 #define munit_assert_true(expr) \
   do { \
