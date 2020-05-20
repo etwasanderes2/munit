@@ -185,7 +185,7 @@ typedef enum {
 MUNIT_PRINTF(4, 5)
 void munit_logf_ex(MunitLogLevel level, const char* filename, int line, const char* format, ...);
 
-//////////////////////
+////////////////////// mine
 void munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, const char* format, ...);
 
 #define munit_logf_noabort(level, format, ...) \
@@ -195,7 +195,17 @@ void munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, 
   munit_logf_noabort(level, "%s", msg)
 
 
-///////////////////////
+MUNIT_NO_RETURN
+MUNIT_PRINTF(1, 2)  //TODO: Is this correct
+void munit_errorf_ex_indent(const char* format, ...);
+
+#define munit_errorf_indent(format, ...) \
+  munit_errorf_ex_indent(format, __VA_ARGS__)
+
+#define munit_error_indent(msg) \
+  munit_errorf_indent("%s", msg)
+
+/////////////////////// ohter
 
 #define munit_logf(level, format, ...) \
   munit_logf_ex(level, __FILE__, __LINE__, format, __VA_ARGS__)
@@ -222,17 +232,17 @@ void munit_errorf_ex(const char* filename, int line, const char* format, ...);
   } while (0) \
   MUNIT_POP_DISABLE_MSVC_C4127_
 
-/////////////////////////////////////
+///////////////////////////////////// mine
 #define munit_assert_msgf(expr, msg, ...) \
   do { \
     if (!MUNIT_LIKELY(expr)) { \
       munit_log_noabort(MUNIT_LOG_ERROR, "assertion failed: " #expr); \
-      munit_errorf(msg, __VA_ARGS__); \
+      munit_errorf_indent(msg, __VA_ARGS__); \
     } \
     MUNIT_PUSH_DISABLE_MSVC_C4127_ \
   } while (0) \
   MUNIT_POP_DISABLE_MSVC_C4127_
-/////////////////////////////////////
+///////////////////////////////////// other
 
 #define munit_assert_true(expr) \
   do { \

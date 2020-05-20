@@ -195,6 +195,83 @@ munit_logf_exv(MunitLogLevel level, FILE* fp, const char* filename, int line, co
   fputc('\n', fp);
 }
 
+///////////////////////////////////// mine
+
+/**
+ * Similar strtok_r (3), but doesn't ignore repeat delimeters. So
+ * "Lorem/ipsum//dolor//" splits on "/" to
+ * "Lorem" "ipsum" "" "dolor" "" ""
+ * This is useful in case developers want to add blank lines to their
+ * debug messages.
+ */
+char*
+munit_strtok_r_keep_double(char *str, const char *delim, char **saveptr){
+  
+  if (str != NULL) {  // Initialization
+
+    char* end = strpbrk(str, delim);
+    if (end == NULL) {
+      saveptr = NULL;
+      return str;
+    }
+
+    *end = '\0';
+    *saveptr = end + 1;
+    return str;
+
+  } else {  // Normal operation
+    if (*saveptr == NULL) {  // Done
+      return NULL;
+    }
+
+    char* start = *saveptr;
+    char* end = strpbrk(start, delim);
+    if (end == NULL) {
+      *saveptr = NULL;
+      return start;
+    }
+
+    *end = '\0';
+    *saveptr = end + 1;
+    return start;
+  }
+}
+
+
+MUNIT_PRINTF(3,0) //TODO: This correct?
+static void
+munit_logf_exv_indent(MunitLogLevel level, FILE* fp, const char* format, va_list ap) {
+
+  if (level < munit_log_level_visible)
+    return;
+
+  // doing stuff with va_lists breaks them, we need a copy
+  va_list ap_copy;
+  va_copy(ap_copy, ap);
+  // Formatting the message
+  size_t msg_len = vsnprintf(NULL, 0, format, ap)  + 1; // +1 for \0
+  char* formatted_msg = malloc(msg_len * sizeof(char));
+  vsnprintf(formatted_msg, msg_len, format, ap_copy);
+
+  // Indenting every line
+  char* token_pos = NULL;
+  char** token_ptr = &token_pos;
+
+  // For all lines
+  char* msg_line = munit_strtok_r_keep_double(formatted_msg, "\n", token_ptr);
+  while ( msg_line != NULL ) {
+    fputs("\t| ", fp);
+    fputs(msg_line, fp);
+    fputc('\n', fp);
+
+    msg_line = munit_strtok_r_keep_double(NULL, "\n", token_ptr);
+  }
+
+  free(formatted_msg);
+  
+}
+///////////////////////////////////// other
+
 MUNIT_PRINTF(3,4)
 static void
 munit_logf_internal(MunitLogLevel level, FILE* fp, const char* format, ...) {
@@ -227,7 +304,7 @@ munit_logf_ex(MunitLogLevel level, const char* filename, int line, const char* f
   }
 }
 
-/////////////////////////
+///////////////////////// mine
 void
 munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, const char* format, ...) {
   va_list ap;
@@ -236,7 +313,40 @@ munit_logf_ex_noabort(MunitLogLevel level, const char* filename, int line, const
   munit_logf_exv(level, stderr, filename, line, format, ap);
   va_end(ap);
 }
-/////////////////////////////
+
+
+void
+munit_logf_ex_indent(MunitLogLevel level, const char* format, ...) {
+  va_list ap;
+
+  va_start(ap, format);
+  munit_logf_exv_indent(level, stderr, format, ap);
+  va_end(ap);
+
+  if (level >= munit_log_level_fatal) {
+#if defined(MUNIT_THREAD_LOCAL)
+    if (munit_error_jmp_buf_valid)
+      longjmp(munit_error_jmp_buf, 1);
+#endif
+    abort();
+  }
+}
+
+void
+munit_errorf_ex_indent(const char* format, ...) {
+  va_list ap;
+
+  va_start(ap, format);
+  munit_logf_exv_indent(MUNIT_LOG_ERROR, stderr, format, ap);
+  va_end(ap);
+
+#if defined(MUNIT_THREAD_LOCAL)
+  if (munit_error_jmp_buf_valid)
+    longjmp(munit_error_jmp_buf, 1);
+#endif
+  abort();
+}
+///////////////////////////// other
 
 void
 munit_errorf_ex(const char* filename, int line, const char* format, ...) {
