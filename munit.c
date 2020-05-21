@@ -253,6 +253,8 @@ munit_logf_exv_indent(MunitLogLevel level, FILE* fp, const char* format, va_list
   char* formatted_msg = malloc(msg_len * sizeof(char));
   vsnprintf(formatted_msg, msg_len, format, ap_copy);
 
+  va_end(ap_copy);
+
   // Indenting every line
   char* token_pos = NULL;
   char** token_ptr = &token_pos;
